@@ -43,7 +43,7 @@ export const determineWinner = async () => {
 
 export const getBets = async () => {
   try {
-    const bets = await RouletteBet.find().populate("userId", "balance");
+    const bets = await RouletteBet.find().populate("userId", "username");
     return bets;
   } catch (error) {
     throw new Error("Failed to retrieve bets");

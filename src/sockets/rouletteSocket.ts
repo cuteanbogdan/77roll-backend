@@ -5,12 +5,21 @@ import {
   getBets,
 } from "../services/rouletteService";
 import logger from "../config/logger";
+import { findUserById } from "../services/userService";
 
 export const rouletteSocket = (io: Server, socket: Socket) => {
   socket.on("place-bet", async ({ userId, color, amount }) => {
     try {
       await placeBet(userId, color, amount);
       io.emit("bet-updated", { userId, color, amount });
+
+      const updatedUser = await findUserById(userId);
+      const updatedBalance = updatedUser?.balance;
+
+      if (updatedBalance !== undefined) {
+        socket.emit("balance-updated", updatedBalance);
+      }
+
       logger.info(`Bet placed: User ${userId} bet ${amount} on ${color}`);
     } catch (error) {
       socket.emit("bet-placed", {

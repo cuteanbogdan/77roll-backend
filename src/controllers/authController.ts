@@ -95,15 +95,16 @@ const checkAuth = async (req: Request, res: Response) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWTSecretKey!) as JwtPayload;
-    const user = await User.findById(decoded.user.id);
+    const user = await User.findById(decoded.user.id).select("-password");
     if (!user) {
       logger.warn(
-        `Authentication check failed - No User for ID: ${decoded.user.id}`
+        `Authentication check failed - No User found for ID: ${decoded.user.id}`
       );
       return res.status(401).json({ isAuthenticated: false });
     }
-    logger.info(`User auth check successfully: ${user.email}`);
-    res.status(200).json({ isAuthenticated: true });
+
+    logger.info(`User auth check successful: ${user.email}`);
+    res.status(200).json({ isAuthenticated: true, user });
   } catch (error) {
     logger.error(`Authentication check error: ${error}`);
     res.status(401).json({ isAuthenticated: false });
