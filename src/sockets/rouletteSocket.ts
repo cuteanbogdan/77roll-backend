@@ -20,6 +20,9 @@ export const rouletteSocket = (io: Server, socket: Socket) => {
         socket.emit("balance-updated", updatedBalance);
       }
 
+      const allBets = await getBets();
+      io.emit("bet-updated", allBets);
+
       logger.info(`Bet placed: User ${userId} bet ${amount} on ${color}`);
     } catch (error) {
       socket.emit("bet-placed", {
@@ -30,10 +33,11 @@ export const rouletteSocket = (io: Server, socket: Socket) => {
     }
   });
 
+  // Handle request to get all bets (useful when a client first connects)
   socket.on("get-all-bets", async () => {
     try {
-      const bets = await getBets();
-      socket.emit("all-bets", bets);
+      const allBets = await getBets();
+      socket.emit("all-bets", allBets);
       logger.info(`Sent all bets to client: ${socket.id}`);
     } catch (error) {
       socket.emit("error", { message: "Error retrieving bets" });
