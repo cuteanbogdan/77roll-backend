@@ -8,7 +8,7 @@ import { JwtPayload } from "../types/auth";
 
 const register = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, username } = req.body;
 
     const existingUser = await User.findOne({ email });
 
@@ -22,6 +22,7 @@ const register = async (req: Request, res: Response) => {
     const newUser = new User({
       email,
       password: hashedPassword,
+      username,
     });
 
     await newUser.save();
