@@ -1,12 +1,22 @@
-import app from "./app";
+import { server } from "./app";
 import connectDB from "./config/db";
 import logger from "./config/logger";
+import { Server } from "socket.io";
+import { setupSockets } from "./sockets";
 
 const PORT = process.env.PORT || 5000;
 
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL,
+    methods: ["GET", "POST"],
+  },
+});
+
 connectDB()
   .then(() => {
-    app.listen(PORT, () => {
+    setupSockets(io);
+    server.listen(PORT, () => {
       logger.info(`Server running on port ${PORT}`);
     });
   })
