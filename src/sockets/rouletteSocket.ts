@@ -11,7 +11,6 @@ export const rouletteSocket = (io: Server, socket: Socket) => {
   socket.on("place-bet", async ({ userId, color, amount }) => {
     try {
       await placeBet(userId, color, amount);
-      io.emit("bet-updated", { userId, color, amount });
 
       const updatedUser = await findUserById(userId);
       const updatedBalance = updatedUser?.balance;
@@ -23,7 +22,9 @@ export const rouletteSocket = (io: Server, socket: Socket) => {
       const allBets = await getBets();
       io.emit("bet-updated", allBets);
 
-      logger.info(`Bet placed: User ${userId} bet ${amount} on ${color}`);
+      logger.info(
+        `Bet placed/updated: User ${userId} bet ${amount} on ${color}`
+      );
     } catch (error) {
       socket.emit("bet-placed", {
         success: false,

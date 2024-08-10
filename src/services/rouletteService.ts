@@ -1,14 +1,18 @@
 import User from "../models/User";
 import { getRandomInt } from "../utils/getRandomInt";
 import RouletteBet from "../models/RouletteBet";
+import mongoose from "mongoose";
 
 export const placeBet = async (
   userId: string,
   color: "black" | "red" | "green",
   amount: number
 ) => {
-  const bet = new RouletteBet({ userId, color, amount });
-  await bet.save();
+  const filter = { userId: new mongoose.Types.ObjectId(userId), color };
+  const update = { $inc: { amount } };
+  const options = { upsert: true, new: true };
+
+  const bet = await RouletteBet.findOneAndUpdate(filter, update, options);
 
   const user = await User.findById(userId);
   if (user) {
