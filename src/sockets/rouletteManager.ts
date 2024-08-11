@@ -14,7 +14,7 @@ class RouletteManager {
 
   constructor(io: Server, socketUserMap: Map<string, string>) {
     this.io = io;
-    this.socketUserMap = socketUserMap; // Receive the map as a parameter
+    this.socketUserMap = socketUserMap;
     this.startRouletteLoop();
   }
 

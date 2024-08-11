@@ -3,6 +3,7 @@ import { getRandomInt } from "../utils/getRandomInt";
 import RouletteBet from "../models/RouletteBet";
 import mongoose from "mongoose";
 import logger from "../config/logger";
+import { formatBalance } from "../utils/formatBalance";
 
 export const placeBet = async (
   userId: string,
@@ -10,16 +11,29 @@ export const placeBet = async (
   amount: number
 ) => {
   const filter = { userId: new mongoose.Types.ObjectId(userId), color };
-  const update = { $inc: { amount } };
-  const options = { upsert: true, new: true };
 
-  const bet = await RouletteBet.findOneAndUpdate(filter, update, options);
+  // Retrieve any existing bet on the same color
+  const existingBet = await RouletteBet.findOne(filter);
 
   const user = await User.findById(userId);
-  if (user) {
-    user.balance -= amount;
-    await user.save();
+  if (!user) throw new Error("User not found");
+
+  // Calculate total balance required
+  const totalBetAmount = formatBalance((existingBet?.amount || 0) + amount);
+
+  // Check if the user has enough balance to place the bet
+  if (user.balance < amount) {
+    throw new Error("Insufficient balance to place this bet");
   }
+
+  // Deduct the new bet amount from the user's balance
+  user.balance = formatBalance(user.balance - amount);
+  await user.save();
+
+  // Update the existing bet or create a new one
+  const update = { amount: totalBetAmount };
+  const options = { upsert: true, new: true };
+  await RouletteBet.findOneAndUpdate(filter, update, options);
 };
 
 export const determineWinner = async () => {
@@ -33,12 +47,12 @@ export const determineWinner = async () => {
     const user = await User.findById(bet.userId);
     if (user) {
       const payoutMultiplier = winningColor === "green" ? 14 : 2;
-      user.balance += bet.amount * payoutMultiplier;
+      formatBalance((user.balance += bet.amount * payoutMultiplier));
       await user.save();
 
       winningUsers.push({
         _id: user._id,
-        balance: user.balance,
+        balance: formatBalance(user.balance),
       });
     }
   }

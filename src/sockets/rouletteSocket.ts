@@ -33,11 +33,12 @@ export const rouletteSocket = (
         `Bet placed/updated: User ${userId} bet ${amount} on ${color}`
       );
     } catch (error) {
-      socket.emit("bet-placed", {
+      socket.emit("bet-error", {
         success: false,
-        message: "Error placing bet",
+        message: "Insufficient balance to place this bet",
       });
-      logger.error(`Error placing bet: ${error}`);
+
+      logger.error(`Error placing bet for User ${userId}: ${error}`);
     }
   });
 
