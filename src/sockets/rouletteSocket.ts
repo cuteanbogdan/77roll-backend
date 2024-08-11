@@ -1,10 +1,6 @@
-import { Server, Socket } from "socket.io";
-import {
-  placeBet,
-  determineWinner,
-  getBets,
-} from "../services/rouletteService";
+import { Socket, Server } from "socket.io";
 import logger from "../config/logger";
+import { placeBet, getBets } from "../services/rouletteService";
 import { findUserById } from "../services/userService";
 
 export const rouletteSocket = (io: Server, socket: Socket) => {
@@ -43,25 +39,6 @@ export const rouletteSocket = (io: Server, socket: Socket) => {
     } catch (error) {
       socket.emit("error", { message: "Error retrieving bets" });
       logger.error(`Error retrieving bets: ${error}`);
-    }
-  });
-
-  let isRolling = false;
-
-  socket.on("start-roulette", async () => {
-    if (isRolling) {
-      return socket.emit("error", { message: "Roulette is already rolling" });
-    }
-    isRolling = true;
-    try {
-      const result = await determineWinner();
-      io.emit("roulette-result", result);
-      logger.info(`Roulette result: ${JSON.stringify(result)}`);
-    } catch (error) {
-      socket.emit("error", { message: "Error starting roulette" });
-      logger.error(`Error starting roulette: ${error}`);
-    } finally {
-      isRolling = false;
     }
   });
 };

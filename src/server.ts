@@ -2,7 +2,7 @@ import { server } from "./app";
 import connectDB from "./config/db";
 import logger from "./config/logger";
 import { Server } from "socket.io";
-import { setupSockets } from "./sockets";
+import { setupSockets } from "./sockets/setupSockets";
 
 const PORT = process.env.PORT || 5000;
 

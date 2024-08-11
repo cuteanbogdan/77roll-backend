@@ -1,8 +1,11 @@
 import { Server } from "socket.io";
-import { rouletteSocket } from "./rouletteSocket";
+import RouletteManager from "./rouletteManager";
 import logger from "../config/logger";
+import { rouletteSocket } from "./rouletteSocket";
 
 export const setupSockets = (io: Server) => {
+  const rouletteManager = new RouletteManager(io);
+
   io.on("connection", (socket) => {
     logger.info(`New client connected: ${socket.id}`);
 
