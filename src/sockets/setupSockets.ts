@@ -7,7 +7,7 @@ import { rouletteSocket } from "./rouletteSocket";
 const socketUserMap = new Map<string, string>();
 
 export const setupSockets = (io: Server) => {
-  const rouletteManager = new RouletteManager(io);
+  const rouletteManager = new RouletteManager(io, socketUserMap);
 
   io.on("connection", (socket) => {
     logger.info(`New client connected: ${socket.id}`);

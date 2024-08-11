@@ -10,9 +10,11 @@ class RouletteManager {
   private isRolling = false;
   private lastExecutionTime: number = Date.now();
   private io: Server;
+  private socketUserMap: Map<string, string>;
 
-  constructor(io: Server) {
+  constructor(io: Server, socketUserMap: Map<string, string>) {
     this.io = io;
+    this.socketUserMap = socketUserMap; // Receive the map as a parameter
     this.startRouletteLoop();
   }
 
@@ -32,13 +34,19 @@ class RouletteManager {
       try {
         const result = await determineWinner();
 
-        // Emit the roulette result to all clients
         this.io.emit("roulette-result", result);
         logger.info(`Roulette result: ${JSON.stringify(result)}`);
 
         // After determining the winner, emit the updated balances
         for (const user of result.winningUsers) {
-          this.io.to(user._id.toString()).emit("balance-updated", user.balance);
+          const socketId = [...this.socketUserMap.entries()].find(
+            ([key, value]) => value === user._id.toString()
+          )?.[0];
+          if (socketId) {
+            this.io.to(socketId).emit("balance-updated", user.balance);
+          } else {
+            logger.warn(`Socket ID not found for user ${user._id.toString()}`);
+          }
         }
 
         // Reset bets after the result

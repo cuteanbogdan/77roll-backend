@@ -32,11 +32,14 @@ export const determineWinner = async () => {
   for (const bet of bets) {
     const user = await User.findById(bet.userId);
     if (user) {
-      let payoutMultiplier = winningColor === "green" ? 14 : 2;
+      const payoutMultiplier = winningColor === "green" ? 14 : 2;
       user.balance += bet.amount * payoutMultiplier;
       await user.save();
 
-      winningUsers.push(user);
+      winningUsers.push({
+        _id: user._id,
+        balance: user.balance,
+      });
     }
   }
 
