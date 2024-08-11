@@ -4,6 +4,7 @@ import RouletteBet from "../models/RouletteBet";
 import mongoose from "mongoose";
 import logger from "../config/logger";
 import { formatBalance } from "../utils/formatBalance";
+import RouletteRoll from "../models/RouletteRoll";
 
 export const placeBet = async (
   userId: string,
@@ -37,8 +38,15 @@ export const placeBet = async (
 };
 
 export const determineWinner = async () => {
-  const winningNumber = getRandomInt(0, 36);
+  const winningNumber = getRandomInt(0, 14);
   const winningColor = getWinningColor(winningNumber);
+
+  // Save the winning number and color in the RouletteRoll history
+  const newRoll = new RouletteRoll({
+    winningNumber,
+    winningColor,
+  });
+  await newRoll.save();
 
   const bets = await RouletteBet.find({ color: winningColor });
 
@@ -76,6 +84,20 @@ export const resetBets = async () => {
   } catch (error) {
     logger.error("Error resetting bets: ", error);
     throw new Error("Failed to reset bets");
+  }
+};
+
+export const getUpdatedHistory = async (): Promise<number[]> => {
+  try {
+    const history = await RouletteRoll.aggregate([
+      { $sort: { timestamp: -1 } },
+      { $limit: 10 },
+      { $project: { _id: 0, winningNumber: 1 } },
+    ]);
+
+    return history.map((roll) => roll.winningNumber);
+  } catch (error) {
+    throw new Error("Failed to retrieve roll history");
   }
 };
 

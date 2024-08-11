@@ -3,7 +3,7 @@ import logger from "../config/logger";
 import {
   determineWinner,
   resetBets,
-  getBets,
+  getUpdatedHistory,
 } from "../services/rouletteService";
 
 class RouletteManager {
@@ -34,7 +34,13 @@ class RouletteManager {
       try {
         const result = await determineWinner();
 
-        this.io.emit("roulette-result", result);
+        const updatedHistory = await getUpdatedHistory();
+
+        this.io.emit("roulette-result", {
+          winningNumber: result.winningNumber,
+          winningColor: result.winningColor,
+          updatedHistory,
+        });
         logger.info(`Roulette result: ${JSON.stringify(result)}`);
 
         // After determining the winner, emit the updated balances
