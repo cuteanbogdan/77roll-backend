@@ -3,16 +3,30 @@ import RouletteManager from "./rouletteManager";
 import logger from "../config/logger";
 import { rouletteSocket } from "./rouletteSocket";
 
+// Create a map to store the relationship between socket IDs and user IDs
+const socketUserMap = new Map<string, string>();
+
 export const setupSockets = (io: Server) => {
   const rouletteManager = new RouletteManager(io);
 
   io.on("connection", (socket) => {
     logger.info(`New client connected: ${socket.id}`);
 
-    rouletteSocket(io, socket);
+    socket.on("register-user", (userId: string) => {
+      socketUserMap.set(socket.id, userId);
+      logger.info(`Socket ID ${socket.id} associated with User ID ${userId}`);
+    });
+
+    rouletteSocket(io, socket, socketUserMap);
 
     socket.on("disconnect", () => {
-      logger.info(`Client disconnected: ${socket.id}`);
+      const userId = socketUserMap.get(socket.id);
+      if (userId) {
+        logger.info(`User ${userId} with Socket ID ${socket.id} disconnected.`);
+        socketUserMap.delete(socket.id);
+      } else {
+        logger.info(`Socket ID ${socket.id} disconnected.`);
+      }
     });
   });
 };

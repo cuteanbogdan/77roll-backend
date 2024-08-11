@@ -3,7 +3,11 @@ import logger from "../config/logger";
 import { placeBet, getBets } from "../services/rouletteService";
 import { findUserById } from "../services/userService";
 
-export const rouletteSocket = (io: Server, socket: Socket) => {
+export const rouletteSocket = (
+  io: Server,
+  socket: Socket,
+  socketUserMap: Map<string, string>
+) => {
   socket.on("place-bet", async ({ userId, color, amount }) => {
     try {
       await placeBet(userId, color, amount);
@@ -12,7 +16,14 @@ export const rouletteSocket = (io: Server, socket: Socket) => {
       const updatedBalance = updatedUser?.balance;
 
       if (updatedBalance !== undefined) {
-        socket.emit("balance-updated", updatedBalance);
+        // Emit balance update directly to the user's socket
+        const userSocketId = Array.from(socketUserMap.entries()).find(
+          ([_, id]) => id === userId
+        )?.[0];
+
+        if (userSocketId) {
+          io.to(userSocketId).emit("balance-updated", updatedBalance);
+        }
       }
 
       const allBets = await getBets();
