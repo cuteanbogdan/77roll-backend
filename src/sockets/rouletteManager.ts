@@ -12,6 +12,7 @@ class RouletteManager {
   private socketUserMap: Map<string, string>;
   private timer: number = 15;
   private currentResult: any = null;
+  public bettingOpen = true;
 
   constructor(io: Server, socketUserMap: Map<string, string>) {
     this.io = io;
@@ -25,11 +26,12 @@ class RouletteManager {
       socket.on("reset-bets-after-animation", async () => {
         if (this.currentResult) {
           try {
-            await this.resetBetsAfterAnimation(socket, this.currentResult);
+            await this.resetBetsAfterAnimation();
           } catch (error) {
             logger.error("Error resetting bets after animation:", error);
           } finally {
             this.currentResult = null;
+            this.startRouletteRound();
           }
         } else {
           logger.warn("No result available for resetting bets.");
@@ -38,9 +40,9 @@ class RouletteManager {
     });
   }
 
-  private async resetBetsAfterAnimation(socket: Socket, result: any) {
-    // Use the passed result to update balances
-    for (const user of result.winningUsers) {
+  private async resetBetsAfterAnimation() {
+    // Use the stored result to update balances
+    for (const user of this.currentResult.winningUsers) {
       const socketId = [...this.socketUserMap.entries()].find(
         ([key, value]) => value === user._id.toString()
       )?.[0];
@@ -66,6 +68,8 @@ class RouletteManager {
         this.timer--;
       } else {
         this.isRolling = true;
+        this.bettingOpen = false;
+        this.io.emit("betting-closed");
         this.timer = 15; // Reset the timer
 
         try {
@@ -88,6 +92,11 @@ class RouletteManager {
         }
       }
     }, 1000);
+  }
+
+  private startRouletteRound() {
+    this.bettingOpen = true;
+    this.io.emit("betting-open");
   }
 }
 

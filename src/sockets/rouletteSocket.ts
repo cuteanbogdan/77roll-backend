@@ -2,13 +2,23 @@ import { Socket, Server } from "socket.io";
 import logger from "../config/logger";
 import { placeBet, getBets } from "../services/rouletteService";
 import { findUserById } from "../services/userService";
+import RouletteManager from "./rouletteManager";
 
 export const rouletteSocket = (
   io: Server,
   socket: Socket,
-  socketUserMap: Map<string, string>
+  socketUserMap: Map<string, string>,
+  rouletteManager: RouletteManager
 ) => {
   socket.on("place-bet", async ({ userId, color, amount }) => {
+    if (!rouletteManager.bettingOpen) {
+      socket.emit("bet-error", {
+        success: false,
+        message: "Betting is currently closed.",
+      });
+      return;
+    }
+
     try {
       await placeBet(userId, color, amount);
 

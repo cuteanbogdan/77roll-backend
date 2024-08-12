@@ -17,7 +17,7 @@ export const setupSockets = (io: Server) => {
       logger.info(`Socket ID ${socket.id} associated with User ID ${userId}`);
     });
 
-    rouletteSocket(io, socket, socketUserMap);
+    rouletteSocket(io, socket, socketUserMap, rouletteManager);
 
     socket.on("disconnect", () => {
       const userId = socketUserMap.get(socket.id);
