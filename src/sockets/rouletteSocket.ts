@@ -63,4 +63,17 @@ export const rouletteSocket = (
       logger.error(`Error retrieving bets: ${error}`);
     }
   });
+
+  socket.on("reset-bets-after-animation", () => {
+    rouletteManager.handleResetBetsAfterAnimation();
+  });
+
+  socket.on("get-initial-state", async () => {
+    try {
+      const initialState = await rouletteManager.getCurrentState();
+      socket.emit("initial-state", initialState);
+    } catch (error) {
+      socket.emit("error", { message: "Error retrieving initial state" });
+    }
+  });
 };

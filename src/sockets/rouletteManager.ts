@@ -1,9 +1,10 @@
-import { Server, Socket } from "socket.io";
+import { Server } from "socket.io";
 import logger from "../config/logger";
 import {
   determineWinner,
   resetBets,
   getUpdatedHistory,
+  getBets,
 } from "../services/rouletteService";
 
 class RouletteManager {
@@ -19,29 +20,22 @@ class RouletteManager {
     this.io = io;
     this.socketUserMap = socketUserMap;
     this.startRouletteLoop();
-    this.registerSocketListeners();
   }
 
-  private registerSocketListeners() {
-    this.io.on("connection", (socket) => {
-      socket.on("reset-bets-after-animation", async () => {
-        if (this.currentResult && this.isRolling) {
-          try {
-            logger.info("Resetting bets after animation...");
-            await this.resetBetsAfterAnimation();
-          } catch (error) {
-            logger.error("Error resetting bets after animation:", error);
-          } finally {
-            this.currentResult = null;
-            this.startRouletteRound();
-          }
-        } else {
-          logger.warn(
-            "No result available for resetting bets or already rolling."
-          );
-        }
-      });
-    });
+  public handleResetBetsAfterAnimation() {
+    if (this.currentResult && this.isRolling) {
+      this.isRolling = true;
+      return this.resetBetsAfterAnimation()
+        .then(() => {
+          this.currentResult = null;
+          this.startRouletteRound();
+        })
+        .catch((error) => {
+          logger.error("Error resetting bets after animation:", error);
+        });
+    } else {
+      logger.warn("No result available for resetting bets or already rolling.");
+    }
   }
 
   private async resetBetsAfterAnimation() {
@@ -109,6 +103,22 @@ class RouletteManager {
     this.isRolling = false; // Reset this after starting the next round
     this.io.emit("betting-open");
     logger.info(`Betting opened for round ${this.roundNumber}`);
+  }
+
+  public async getCurrentState() {
+    const bets = await getBets();
+    const history = await getUpdatedHistory();
+    const targetNumber = this.currentResult?.winningNumber || 4;
+    const roundNumber = this.roundNumber;
+    const bettingOpen = this.bettingOpen;
+
+    return {
+      bets,
+      history,
+      targetNumber,
+      roundNumber,
+      bettingOpen,
+    };
   }
 }
 
