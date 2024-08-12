@@ -12,6 +12,7 @@ class RouletteManager {
   private socketUserMap: Map<string, string>;
   private timer: number = 15;
   private currentResult: any = null;
+  private roundNumber: number = 1;
   public bettingOpen = true;
 
   constructor(io: Server, socketUserMap: Map<string, string>) {
@@ -24,8 +25,9 @@ class RouletteManager {
   private registerSocketListeners() {
     this.io.on("connection", (socket) => {
       socket.on("reset-bets-after-animation", async () => {
-        if (this.currentResult) {
+        if (this.currentResult && this.isRolling) {
           try {
+            logger.info("Resetting bets after animation...");
             await this.resetBetsAfterAnimation();
           } catch (error) {
             logger.error("Error resetting bets after animation:", error);
@@ -34,7 +36,9 @@ class RouletteManager {
             this.startRouletteRound();
           }
         } else {
-          logger.warn("No result available for resetting bets.");
+          logger.warn(
+            "No result available for resetting bets or already rolling."
+          );
         }
       });
     });
@@ -57,6 +61,8 @@ class RouletteManager {
     await resetBets();
     this.io.emit("clear-bets");
     logger.info("Bets reset after animation");
+
+    this.isRolling = false;
   }
 
   private async startRouletteLoop() {
@@ -70,7 +76,6 @@ class RouletteManager {
         this.isRolling = true;
         this.bettingOpen = false;
         this.io.emit("betting-closed");
-        this.timer = 15; // Reset the timer
 
         try {
           const result = await determineWinner();
@@ -81,14 +86,17 @@ class RouletteManager {
           this.io.emit("roulette-result", {
             winningNumber: result.winningNumber,
             winningColor: result.winningColor,
+            roundNumber: this.roundNumber,
             updatedHistory,
           });
-          logger.info(`Roulette result: ${JSON.stringify(result)}`);
+          logger.info(
+            `Roulette result for round ${this.roundNumber}: ${JSON.stringify(
+              result
+            )}`
+          );
         } catch (error) {
           this.io.emit("error", { message: "Error during roulette process" });
           logger.error(`Error during roulette process: ${error}`);
-        } finally {
-          this.isRolling = false;
         }
       }
     }, 1000);
@@ -96,7 +104,11 @@ class RouletteManager {
 
   private startRouletteRound() {
     this.bettingOpen = true;
+    this.roundNumber++;
+    this.timer = 15;
+    this.isRolling = false; // Reset this after starting the next round
     this.io.emit("betting-open");
+    logger.info(`Betting opened for round ${this.roundNumber}`);
   }
 }
 
