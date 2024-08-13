@@ -1,6 +1,10 @@
 import { Socket, Server } from "socket.io";
 import logger from "../config/logger";
-import { placeBet, getBets } from "../services/rouletteService";
+import {
+  placeBet,
+  getBets,
+  getUpdatedHistory,
+} from "../services/rouletteService";
 import { findUserById } from "../services/userService";
 import RouletteManager from "./rouletteManager";
 
@@ -74,6 +78,16 @@ export const rouletteSocket = (
       socket.emit("initial-state", initialState);
     } catch (error) {
       socket.emit("error", { message: "Error retrieving initial state" });
+    }
+  });
+
+  socket.on("get-history", async () => {
+    try {
+      const updatedHistory = await getUpdatedHistory();
+      socket.emit("updated-history", updatedHistory);
+    } catch (error) {
+      socket.emit("error", { message: "Error retrieving history" });
+      logger.error(`Error retrieving history: ${error}`);
     }
   });
 };
