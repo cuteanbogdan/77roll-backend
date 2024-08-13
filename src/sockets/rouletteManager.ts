@@ -63,7 +63,7 @@ class RouletteManager {
     setInterval(async () => {
       if (this.isRolling) return;
 
-      if (this.timer > 0) {
+      if (this.timer >= 0) {
         this.io.emit("timer-update", this.timer);
         this.timer--;
       } else {
