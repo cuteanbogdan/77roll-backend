@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import http from "http";
 import { configureMiddleware } from "./config/middleware";
 import authRoutes from "./routes/authRoutes";
+import usersRoutes from "./routes/usersRoutes";
 
 dotenv.config();
 
@@ -12,6 +13,7 @@ const server = http.createServer(app);
 configureMiddleware(app);
 
 app.use("/api/auth", authRoutes);
+app.use("/api/users", usersRoutes);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Test BE boilerplate");

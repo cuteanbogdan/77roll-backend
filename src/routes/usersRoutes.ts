@@ -4,6 +4,7 @@ import {
   getUserById,
   updateUserById,
   deleteUserById,
+  uploadUserProfileImage,
 } from "../controllers/usersController";
 
 const router = Router();
@@ -23,5 +24,9 @@ router.put("/:id", updateUserById);
 // @route   DELETE /api/users/:id
 // @desc    Delete user by ID
 router.delete("/:id", deleteUserById);
+
+// @route   POST /api/users/:id/upload-profile-image
+// @desc    Upload user profile image
+router.put("/:id/upload-profile-image", uploadUserProfileImage);
 
 export default router;
