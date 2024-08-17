@@ -108,7 +108,7 @@ class RouletteManager {
   public async getCurrentState() {
     const bets = await getBets();
     const history = await getUpdatedHistory();
-    const targetNumber = this.currentResult?.winningNumber || 4;
+    const targetNumber = this.currentResult?.winningNumber || history[0];
     const roundNumber = this.roundNumber;
     const bettingOpen = this.bettingOpen;
 
