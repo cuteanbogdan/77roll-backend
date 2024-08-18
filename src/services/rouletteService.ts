@@ -6,6 +6,7 @@ import logger from "../config/logger";
 import { formatBalance } from "../utils/formatBalance";
 import RouletteRoll from "../models/RouletteRoll";
 import { updateUserLevelAndRank } from "./userService";
+import Transaction from "../models/Transaction";
 
 export const placeBet = async (
   userId: string,
@@ -35,6 +36,16 @@ export const placeBet = async (
   user.totalBets = formatBalance(user.totalBets + amount);
   await user.save();
 
+  const transaction = new Transaction({
+    userId: user._id,
+    type: `Roulette Bet Placement - ${
+      color.charAt(0).toUpperCase() + color.substring(1)
+    }`,
+    amount: -amount,
+    date: new Date(),
+  });
+  await transaction.save();
+
   // Update the existing bet or create a new one
   const update = { amount: totalBetAmount };
   const options = { upsert: true, new: true };
@@ -63,8 +74,20 @@ export const determineWinner = async () => {
     const user = await User.findById(bet.userId);
     if (user) {
       const payoutMultiplier = winningColor === "green" ? 14 : 2;
-      formatBalance((user.balance += bet.amount * payoutMultiplier));
+      const payoutAmount = bet.amount * payoutMultiplier;
+
+      user.balance = formatBalance(user.balance + payoutAmount);
       await user.save();
+
+      const transaction = new Transaction({
+        userId: user._id,
+        type: `Roulette Bet Win - ${
+          winningColor.charAt(0).toUpperCase() + winningColor.substring(1)
+        }`,
+        amount: payoutAmount,
+        date: new Date(),
+      });
+      await transaction.save();
 
       winningUsers.push({
         _id: user._id,
