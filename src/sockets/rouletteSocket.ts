@@ -56,18 +56,6 @@ export const rouletteSocket = (
     }
   });
 
-  // Handle request to get all bets (useful when a client first connects)
-  socket.on("get-all-bets", async () => {
-    try {
-      const allBets = await getBets();
-      socket.emit("all-bets", allBets);
-      logger.info(`Sent all bets to client: ${socket.id}`);
-    } catch (error) {
-      socket.emit("error", { message: "Error retrieving bets" });
-      logger.error(`Error retrieving bets: ${error}`);
-    }
-  });
-
   socket.on("reset-bets-after-animation", () => {
     rouletteManager.handleResetBetsAfterAnimation();
   });
