@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import logger from "../config/logger";
 import { formatBalance } from "../utils/formatBalance";
 import RouletteRoll from "../models/RouletteRoll";
+import { updateUserLevelAndRank } from "./userService";
 
 export const placeBet = async (
   userId: string,
@@ -38,6 +39,10 @@ export const placeBet = async (
   const update = { amount: totalBetAmount };
   const options = { upsert: true, new: true };
   await RouletteBet.findOneAndUpdate(filter, update, options);
+
+  // Update user's experience and handle leveling
+  const experienceGained = amount / 2;
+  await updateUserLevelAndRank(userId, experienceGained);
 };
 
 export const determineWinner = async () => {
