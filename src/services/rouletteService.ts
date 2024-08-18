@@ -29,6 +29,9 @@ export const placeBet = async (
 
   // Deduct the new bet amount from the user's balance
   user.balance = formatBalance(user.balance - amount);
+
+  user.totalBetRoulette = formatBalance(user.totalBetRoulette + amount);
+  user.totalBets = formatBalance(user.totalBets + amount);
   await user.save();
 
   // Update the existing bet or create a new one
