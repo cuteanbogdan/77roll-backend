@@ -80,7 +80,7 @@ class RouletteManager {
         this.io.emit("betting-closed");
 
         try {
-          const clientSeeds = await getClientSeeds(this.socketUserMap);
+          const clientSeeds = await getClientSeeds();
 
           // Call determineWinner with the necessary arguments
           const result = await determineWinner(

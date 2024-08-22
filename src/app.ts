@@ -5,6 +5,7 @@ import { configureMiddleware } from "./config/middleware";
 import authRoutes from "./routes/authRoutes";
 import usersRoutes from "./routes/usersRoutes";
 import transactionsRoutes from "./routes/transactionsRoutes";
+import fairnessRoutes from "./routes/fairnessRoutes";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ configureMiddleware(app);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/transactions", transactionsRoutes);
+app.use("/api/fairness", fairnessRoutes);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Test BE boilerplate");

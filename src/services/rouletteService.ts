@@ -146,17 +146,24 @@ export const getUpdatedHistory = async (): Promise<number[]> => {
   }
 };
 
-export const getClientSeeds = async (
-  socketUserMap: Map<string, string>
-): Promise<string[]> => {
-  // Get userIds from the connected users
-  const userIds = [...socketUserMap.values()];
+export const getClientSeeds = async (): Promise<string[]> => {
+  try {
+    const bets = await RouletteBet.find().select("userId");
 
-  const users = await User.find({ _id: { $in: userIds } }, "clientSeed").exec();
+    const uniqueUserIds = [
+      ...new Set(bets.map((bet) => bet.userId.toString())),
+    ];
 
-  const clientSeeds = users.map((user) => user.clientSeed);
+    const users = await User.find(
+      { _id: { $in: uniqueUserIds } },
+      "clientSeed"
+    ).exec();
 
-  return clientSeeds;
+    const clientSeeds = users.map((user) => user.clientSeed);
+    return clientSeeds;
+  } catch (error) {
+    throw new Error("Failed to retrieve client seeds from user bets");
+  }
 };
 
 const getWinningColor = (number: number): "black" | "red" | "green" => {
