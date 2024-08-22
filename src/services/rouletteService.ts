@@ -1,5 +1,4 @@
 import User from "../models/User";
-import { getRandomInt } from "../utils/getRandomInt";
 import RouletteBet from "../models/RouletteBet";
 import mongoose from "mongoose";
 import logger from "../config/logger";
@@ -7,6 +6,7 @@ import { formatBalance } from "../utils/formatBalance";
 import RouletteRoll from "../models/RouletteRoll";
 import { updateUserLevelAndRank } from "./userService";
 import Transaction from "../models/Transaction";
+import { generateWinningNumber } from "../utils/GenerateWinningNumberOptions";
 
 export const placeBet = async (
   userId: string,
@@ -56,14 +56,25 @@ export const placeBet = async (
   await updateUserLevelAndRank(userId, experienceGained);
 };
 
-export const determineWinner = async () => {
-  const winningNumber = getRandomInt(0, 14);
-  const winningColor = getWinningColor(winningNumber);
+export const determineWinner = async (
+  serverSeed: string,
+  clientSeeds: string[],
+  roundNumber: number
+) => {
+  const finalWinningNumber = generateWinningNumber({
+    serverSeed,
+    clientSeeds,
+    roundNumber,
+  });
 
-  // Save the winning number and color in the RouletteRoll history
+  const winningColor = getWinningColor(finalWinningNumber);
+
+  // Save the winning number, color, serverSeed, and roundNumber in the RouletteRoll history
   const newRoll = new RouletteRoll({
-    winningNumber,
+    winningNumber: finalWinningNumber,
     winningColor,
+    serverSeed,
+    roundNumber,
   });
   await newRoll.save();
 
@@ -96,7 +107,7 @@ export const determineWinner = async () => {
     }
   }
 
-  return { winningNumber, winningColor, winningUsers };
+  return { winningNumber: finalWinningNumber, winningColor, winningUsers };
 };
 
 export const getBets = async () => {
@@ -133,6 +144,19 @@ export const getUpdatedHistory = async (): Promise<number[]> => {
   } catch (error) {
     throw new Error("Failed to retrieve roll history");
   }
+};
+
+export const getClientSeeds = async (
+  socketUserMap: Map<string, string>
+): Promise<string[]> => {
+  // Get userIds from the connected users
+  const userIds = [...socketUserMap.values()];
+
+  const users = await User.find({ _id: { $in: userIds } }, "clientSeed").exec();
+
+  const clientSeeds = users.map((user) => user.clientSeed);
+
+  return clientSeeds;
 };
 
 const getWinningColor = (number: number): "black" | "red" | "green" => {

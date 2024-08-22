@@ -6,6 +6,7 @@ interface IUser extends Document {
   password: string;
   username: string;
   balance: number;
+  clientSeed: string;
   level: number;
   experience: number;
   profileImage: string;
@@ -21,6 +22,7 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
     password: { type: String, required: true },
     username: { type: String, required: true },
     balance: { type: Number, default: 0 },
+    clientSeed: { type: String, required: false },
     level: { type: Number, default: 1 },
     experience: { type: Number, default: 0 },
     profileImage: { type: String, default: "" },

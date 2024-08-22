@@ -5,7 +5,9 @@ import {
   resetBets,
   getUpdatedHistory,
   getBets,
+  getClientSeeds,
 } from "../services/rouletteService";
+import crypto from "crypto";
 
 class RouletteManager {
   private isRolling = false;
@@ -15,11 +17,17 @@ class RouletteManager {
   private currentResult: any = null;
   private roundNumber: number = 1;
   public bettingOpen = true;
+  private serverSeed: string;
 
   constructor(io: Server, socketUserMap: Map<string, string>) {
     this.io = io;
     this.socketUserMap = socketUserMap;
+    this.serverSeed = this.generateServerSeed();
     this.startRouletteLoop();
+  }
+
+  private generateServerSeed(): string {
+    return crypto.randomBytes(32).toString("hex");
   }
 
   public handleResetBetsAfterAnimation() {
@@ -72,7 +80,14 @@ class RouletteManager {
         this.io.emit("betting-closed");
 
         try {
-          const result = await determineWinner();
+          const clientSeeds = await getClientSeeds(this.socketUserMap);
+
+          // Call determineWinner with the necessary arguments
+          const result = await determineWinner(
+            this.serverSeed,
+            clientSeeds,
+            this.roundNumber
+          );
           this.currentResult = result;
 
           const updatedHistory = await getUpdatedHistory();
@@ -82,6 +97,7 @@ class RouletteManager {
             winningColor: result.winningColor,
             roundNumber: this.roundNumber,
             updatedHistory,
+            serverSeed: this.serverSeed,
           });
           logger.info(
             `Roulette result for round ${this.roundNumber}: ${JSON.stringify(
@@ -97,6 +113,7 @@ class RouletteManager {
   }
 
   private startRouletteRound() {
+    this.serverSeed = this.generateServerSeed();
     this.bettingOpen = true;
     this.roundNumber++;
     this.timer = 15;
