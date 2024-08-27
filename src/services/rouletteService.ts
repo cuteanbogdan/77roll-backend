@@ -73,6 +73,7 @@ export const determineWinner = async (
   const newRoll = new RouletteRoll({
     winningNumber: finalWinningNumber,
     winningColor,
+    clientSeeds,
     serverSeed,
     roundNumber,
   });

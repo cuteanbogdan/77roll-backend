@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from "mongoose";
 interface IRouletteRoll extends Document {
   winningNumber: number;
   winningColor: "black" | "red" | "green";
+  clientSeeds: string[];
   serverSeed: string;
   roundNumber: number;
   timestamp: Date;
@@ -15,6 +16,7 @@ const RouletteRollSchema: Schema<IRouletteRoll> = new Schema({
     enum: ["black", "red", "green"],
     required: true,
   },
+  clientSeeds: { type: [String], required: true },
   serverSeed: { type: String, required: true },
   roundNumber: { type: Number, required: true },
   timestamp: { type: Date, default: Date.now },
