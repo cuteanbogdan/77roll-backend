@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import RouletteManager from "./rouletteManager";
 import logger from "../config/logger";
 import { rouletteSocket } from "./rouletteSocket";
+import { chatSocket } from "./chatSocket";
 
 // Create a map to store the relationship between socket IDs and user IDs
 const socketUserMap = new Map<string, string>();
@@ -18,6 +19,7 @@ export const setupSockets = (io: Server) => {
     });
 
     rouletteSocket(io, socket, socketUserMap, rouletteManager);
+    chatSocket(io, socket);
 
     socket.on("disconnect", () => {
       const userId = socketUserMap.get(socket.id);
