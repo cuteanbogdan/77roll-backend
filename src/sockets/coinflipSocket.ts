@@ -5,13 +5,36 @@ import {
   determineWinnerCoinflip,
 } from "../services/coinflipService";
 import logger from "../config/logger";
+import CoinflipRoom from "../models/CoinflipRoom";
+import { findUserById } from "../services/userService";
 
-export const coinflipSocket = (io: Server, socket: Socket) => {
+export const coinflipSocket = (
+  io: Server,
+  socket: Socket,
+  socketUserMap: Map<string, string>
+) => {
   socket.on("create-room-coinflip", async ({ userId, choice, betAmount }) => {
     try {
       const room = await createRoom(userId, choice, betAmount);
       socket.join(room._id.toString());
-      socket.emit("room-created", room);
+
+      // Emit balance update to the user's socket
+      const updatedUser = await findUserById(userId);
+      const updatedBalance = updatedUser?.balance;
+
+      if (updatedBalance !== undefined) {
+        const userSocketId = Array.from(socketUserMap.entries()).find(
+          ([_, id]) => id === userId
+        )?.[0];
+
+        if (userSocketId) {
+          io.to(userSocketId).emit("balance-updated", updatedBalance);
+        }
+      }
+
+      const allRooms = await CoinflipRoom.find({ status: "waiting" });
+      io.emit("rooms-updated", allRooms);
+
       logger.info(
         `User ${userId} created room ${room._id} with bet ${betAmount}`
       );

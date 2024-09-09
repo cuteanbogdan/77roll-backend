@@ -1,7 +1,7 @@
 import CoinflipRoom from "../models/CoinflipRoom";
 import User from "../models/User";
 import { CoinflipRoomType } from "../types/games";
-import mongoose from "mongoose";
+
 export const createRoom = async (
   userId: string,
   choice: "heads" | "tails",

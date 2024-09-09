@@ -20,7 +20,7 @@ export const setupSockets = (io: Server) => {
     });
 
     rouletteSocket(io, socket, socketUserMap, rouletteManager);
-    coinflipSocket(io, socket);
+    coinflipSocket(io, socket, socketUserMap);
     chatSocket(io, socket);
 
     socket.on("disconnect", () => {
