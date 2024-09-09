@@ -3,6 +3,7 @@ import RouletteManager from "./rouletteManager";
 import logger from "../config/logger";
 import { rouletteSocket } from "./rouletteSocket";
 import { chatSocket } from "./chatSocket";
+import { coinflipSocket } from "./coinflipSocket";
 
 // Create a map to store the relationship between socket IDs and user IDs
 const socketUserMap = new Map<string, string>();
@@ -19,6 +20,7 @@ export const setupSockets = (io: Server) => {
     });
 
     rouletteSocket(io, socket, socketUserMap, rouletteManager);
+    coinflipSocket(io, socket);
     chatSocket(io, socket);
 
     socket.on("disconnect", () => {
