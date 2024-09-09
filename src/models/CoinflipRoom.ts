@@ -1,8 +1,8 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 interface ICoinflipRoom extends Document {
-  creatorId: mongoose.Schema.Types.ObjectId;
-  opponentId?: mongoose.Schema.Types.ObjectId;
+  creatorId: mongoose.Types.ObjectId;
+  opponentId?: mongoose.Types.ObjectId;
   creatorChoice: "heads" | "tails";
   opponentChoice?: "heads" | "tails";
   betAmount: number;
