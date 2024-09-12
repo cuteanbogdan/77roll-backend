@@ -32,7 +32,7 @@ export const coinflipSocket = (
         }
       }
 
-      const allRooms = await CoinflipRoom.find({ status: "waiting" });
+      const allRooms = await CoinflipRoom.find();
       io.emit("rooms-updated", allRooms);
 
       logger.info(
@@ -60,6 +60,16 @@ export const coinflipSocket = (
     } catch (error) {
       socket.emit("room-error", { message: "Error joining room" });
       logger.error(`Error joining room: ${error}`);
+    }
+  });
+
+  socket.on("get-rooms", async () => {
+    try {
+      const allRooms = await CoinflipRoom.find();
+      socket.emit("rooms-updated", allRooms);
+    } catch (error) {
+      socket.emit("room-error", { message: "Error fetching rooms" });
+      logger.error(`Error fetching rooms: ${error}`);
     }
   });
 };
