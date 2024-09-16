@@ -3,6 +3,7 @@ import {
   createRoom,
   joinRoom,
   determineWinnerCoinflip,
+  deleteRoom,
 } from "../services/coinflipService";
 import logger from "../config/logger";
 import CoinflipRoom from "../models/CoinflipRoom";
@@ -48,13 +49,48 @@ export const coinflipSocket = (
     try {
       const room = await joinRoom(roomId, userId, choice);
       socket.join(roomId);
+
+      const updatedUser = await findUserById(userId);
+      const updatedBalance = updatedUser?.balance;
+
+      if (updatedBalance !== undefined) {
+        const userSocketId = Array.from(socketUserMap.entries()).find(
+          ([_, id]) => id === userId
+        )?.[0];
+
+        if (userSocketId) {
+          io.to(userSocketId).emit("balance-updated", updatedBalance);
+        }
+      }
+
       io.to(roomId).emit("room-joined", room);
+
+      const allRooms = await CoinflipRoom.find();
+      io.emit("rooms-updated", allRooms);
 
       if (room.opponentId) {
         setTimeout(async () => {
           const winner = determineWinnerCoinflip(room);
           io.to(roomId).emit("game-result", winner);
-          logger.info(`Game result for room ${roomId}: ${winner}`);
+
+          const updatedUser = await findUserById((await winner).winnerId);
+          const updatedBalance = updatedUser?.balance;
+
+          if (updatedBalance !== undefined) {
+            const userSocketId = Array.from(socketUserMap.entries()).find(
+              ([_, id]) => id === updatedUser?._id.toString()
+            )?.[0];
+
+            if (userSocketId) {
+              io.to(userSocketId).emit("balance-updated", updatedBalance);
+            }
+          }
+
+          setTimeout(async () => {
+            await deleteRoom(roomId);
+            logger.info(`Room ${roomId} has been deleted from the database.`);
+            io.to(roomId).emit("room-deleted", { roomId });
+          }, 4000);
         }, 3000);
       }
     } catch (error) {
