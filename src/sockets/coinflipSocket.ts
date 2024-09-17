@@ -45,9 +45,9 @@ export const coinflipSocket = (
     }
   });
 
-  socket.on("join-room-coinflip", async ({ roomId, userId, choice }) => {
+  socket.on("join-room-coinflip", async ({ roomId, userId }) => {
     try {
-      const room = await joinRoom(roomId, userId, choice);
+      const room = await joinRoom(roomId, userId);
       socket.join(roomId);
 
       const updatedUser = await findUserById(userId);

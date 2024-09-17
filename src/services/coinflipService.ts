@@ -29,8 +29,7 @@ export const createRoom = async (
 
 export const joinRoom = async (
   roomId: string,
-  userId: string,
-  choice: "heads" | "tails"
+  userId: string
 ): Promise<CoinflipRoomType> => {
   const room = await CoinflipRoom.findById(roomId);
   if (!room || room.status !== "waiting") {
@@ -46,7 +45,7 @@ export const joinRoom = async (
   await user.save();
 
   room.opponentId = user._id;
-  room.opponentChoice = choice;
+  room.opponentChoice = room.creatorChoice === "heads" ? "tails" : "heads";
   room.status = "playing";
 
   await room.save();
