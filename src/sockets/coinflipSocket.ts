@@ -70,8 +70,8 @@ export const coinflipSocket = (
 
       if (room.opponentId) {
         setTimeout(async () => {
-          const winner = determineWinnerCoinflip(room);
-          io.to(roomId).emit("game-result", winner);
+          const winner = await determineWinnerCoinflip(room);
+          io.to(roomId).emit("game-result", { ...winner, roomId });
 
           const updatedUser = await findUserById((await winner).winnerId);
           const updatedBalance = updatedUser?.balance;
