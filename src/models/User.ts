@@ -13,6 +13,7 @@ interface IUser extends Document {
   rank: string;
   totalBets: number;
   totalBetRoulette: number;
+  totalBetCoinflip: number;
   xpToNextLevel: number;
 }
 
@@ -29,6 +30,7 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
     rank: { type: String, default: "Rookie" },
     totalBets: { type: Number, default: 0 },
     totalBetRoulette: { type: Number, default: 0 },
+    totalBetCoinflip: { type: Number, default: 0 },
     xpToNextLevel: { type: Number, default: 100 },
   },
   { timestamps: true }
