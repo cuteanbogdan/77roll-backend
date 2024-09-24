@@ -56,9 +56,9 @@ export const rouletteSocket = (
     }
   });
 
-  socket.on("reset-bets-after-animation", () => {
-    rouletteManager.handleResetBetsAfterAnimation();
-  });
+  // socket.on("reset-bets-after-animation", () => {
+  //   rouletteManager.handleResetBetsAfterAnimation();
+  // });
 
   socket.on("get-initial-state", async () => {
     try {

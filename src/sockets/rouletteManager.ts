@@ -65,6 +65,7 @@ class RouletteManager {
     logger.info("Bets reset after animation");
 
     this.isRolling = false;
+    this.currentResult = null;
   }
 
   private async startRouletteLoop() {
@@ -104,6 +105,12 @@ class RouletteManager {
               result
             )}`
           );
+          // Schedule resetting bets after animation
+          const animationDuration = 5000;
+          setTimeout(async () => {
+            await this.resetBetsAfterAnimation();
+            this.startRouletteRound();
+          }, animationDuration);
         } catch (error) {
           this.io.emit("error", { message: "Error during roulette process" });
           logger.error(`Error during roulette process: ${error}`);
