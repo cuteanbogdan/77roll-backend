@@ -39,7 +39,8 @@ export const updateUserById = async (req: Request, res: Response) => {
     const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
-    });
+    }).select("-password");
+
     if (!updatedUser) {
       logger.warn(`User not found with id: ${req.params.id}`);
       return res.status(404).json({ message: "User not found" });
@@ -54,7 +55,9 @@ export const updateUserById = async (req: Request, res: Response) => {
 
 export const deleteUserById = async (req: Request, res: Response) => {
   try {
-    const deletedUser = await User.findByIdAndDelete(req.params.id);
+    const deletedUser = await User.findByIdAndDelete(req.params.id).select(
+      "-password"
+    );
     if (!deletedUser) {
       logger.warn(`User not found with id: ${req.params.id}`);
       return res.status(404).json({ message: "User not found" });
