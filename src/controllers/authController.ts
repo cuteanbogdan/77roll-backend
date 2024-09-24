@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import User from "../models/User";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import logger from "../config/logger";
 import { generateToken } from "../utils/jwt";
 import jwt from "jsonwebtoken";
@@ -19,10 +20,13 @@ const register = async (req: Request, res: Response) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const clientSeed = crypto.randomBytes(16).toString("hex");
+
     const newUser = new User({
       email,
       password: hashedPassword,
       username,
+      clientSeed,
     });
 
     await newUser.save();
