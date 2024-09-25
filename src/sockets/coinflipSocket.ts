@@ -47,7 +47,21 @@ export const coinflipSocket = (
 
   socket.on("join-room-coinflip", async ({ roomId, userId }) => {
     try {
-      const room = await joinRoom(roomId, userId);
+      const room = await CoinflipRoom.findById(roomId);
+
+      if (!room) {
+        socket.emit("room-error", { message: "Room not found" });
+        return;
+      }
+
+      if (room.creatorId.toString() === userId) {
+        socket.emit("room-error", {
+          message: "You cannot join your own room.",
+        });
+        return;
+      }
+
+      const updatedRoom = await joinRoom(roomId, userId);
       socket.join(roomId);
 
       const updatedUser = await findUserById(userId);
@@ -63,14 +77,14 @@ export const coinflipSocket = (
         }
       }
 
-      io.to(roomId).emit("room-joined", room);
+      io.to(roomId).emit("room-joined", updatedRoom);
 
       const allRooms = await CoinflipRoom.find();
       io.emit("rooms-updated", allRooms);
 
-      if (room.opponentId) {
+      if (updatedRoom.opponentId) {
         setTimeout(async () => {
-          const winner = await determineWinnerCoinflip(room);
+          const winner = await determineWinnerCoinflip(updatedRoom);
           io.to(roomId).emit("game-result", { ...winner, roomId });
 
           const updatedUser = await findUserById((await winner).winnerId);

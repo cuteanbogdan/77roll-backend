@@ -62,7 +62,6 @@ class RouletteManager {
     // Reset the bets
     await resetBets();
     this.io.emit("clear-bets");
-    logger.info("Bets reset after animation");
 
     this.isRolling = false;
     this.currentResult = null;
