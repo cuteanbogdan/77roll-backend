@@ -33,7 +33,7 @@ export const coinflipSocket = (
         }
       }
 
-      const allRooms = await CoinflipRoom.find();
+      const allRooms = await CoinflipRoom.find().select("-roomSeed");
       io.emit("rooms-updated", allRooms);
 
       logger.info(
@@ -79,7 +79,7 @@ export const coinflipSocket = (
 
       io.to(roomId).emit("room-joined", updatedRoom);
 
-      const allRooms = await CoinflipRoom.find();
+      const allRooms = await CoinflipRoom.find().select("-roomSeed");
       io.emit("rooms-updated", allRooms);
 
       if (updatedRoom.opponentId) {
@@ -115,7 +115,7 @@ export const coinflipSocket = (
 
   socket.on("get-rooms", async () => {
     try {
-      const allRooms = await CoinflipRoom.find();
+      const allRooms = await CoinflipRoom.find().select("-roomSeed");
       socket.emit("rooms-updated", allRooms);
     } catch (error) {
       socket.emit("room-error", { message: "Error fetching rooms" });

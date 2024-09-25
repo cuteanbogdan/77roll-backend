@@ -7,6 +7,7 @@ interface ICoinflipRoom extends Document {
   opponentChoice?: "heads" | "tails";
   betAmount: number;
   result?: "heads" | "tails";
+  roomSeed: string;
   status: "waiting" | "playing" | "finished";
 }
 
@@ -17,6 +18,7 @@ const CoinflipRoomSchema: Schema<ICoinflipRoom> = new Schema({
   opponentChoice: { type: String, enum: ["heads", "tails"] },
   betAmount: { type: Number, required: true },
   result: { type: String, enum: ["heads", "tails"] },
+  roomSeed: { type: String, required: true },
   status: {
     type: String,
     enum: ["waiting", "playing", "finished"],

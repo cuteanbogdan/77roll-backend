@@ -4,7 +4,9 @@ import Transaction from "../models/Transaction";
 import User from "../models/User";
 import { CoinflipRoomType } from "../types/games";
 import { formatBalance } from "../utils/formatBalance";
+import { determineCoinflipOutcome } from "../utils/GenerateWinnerCoinflip";
 import { updateUserLevelAndRank } from "./userService";
+import crypto from "crypto";
 
 export const createRoom = async (
   userId: string,
@@ -34,10 +36,13 @@ export const createRoom = async (
   });
   await transaction.save();
 
+  const roomSeed = crypto.randomBytes(32).toString("hex");
+
   const newRoom = new CoinflipRoom({
     creatorId: user._id,
     creatorChoice: choice,
     betAmount,
+    roomSeed,
     status: "waiting",
   });
 
@@ -97,9 +102,25 @@ export const deleteRoom = async (roomId: string): Promise<void> => {
 };
 
 export const determineWinnerCoinflip = async (room: any) => {
-  const outcome = Math.random() < 0.5 ? "heads" : "tails";
-  const winnerId =
-    room.creatorChoice === outcome ? room.creatorId : room.opponentId;
+  const creator = await User.findById(room.creatorId).select("clientSeed");
+  const opponent = await User.findById(room.opponentId).select("clientSeed");
+
+  if (!creator || !opponent) {
+    throw new Error("One of the users not found");
+  }
+
+  const creatorClientSeed = creator.clientSeed;
+  const opponentClientSeed = opponent.clientSeed;
+
+  const { outcome, winnerId } = determineCoinflipOutcome(
+    room.roomSeed,
+    creatorClientSeed,
+    opponentClientSeed,
+    room._id.toString(),
+    room.creatorChoice,
+    room.creatorId,
+    room.opponentId
+  );
 
   room.result = outcome;
   room.winnerId = winnerId;
