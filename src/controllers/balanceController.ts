@@ -3,6 +3,7 @@ import { createCoinPaymentsTransaction } from "../services/coinPaymentsService";
 import { updateUserBalance } from "../services/userService";
 import logger from "../config/logger";
 import crypto from "crypto";
+import Transaction from "../models/Transaction";
 
 // Controller to handle deposit creation
 export const createDeposit = async (req: Request, res: Response) => {
@@ -22,7 +23,7 @@ export const createDeposit = async (req: Request, res: Response) => {
     );
 
     logger.info(
-      `Deposit created for user ${userId} with amount ${amount} ${currency}`
+      `Deposit created for user ${userId} with amount ${amount}$ in ${currency}`
     );
 
     // Return the payment URL so the user can complete the transaction
@@ -47,7 +48,7 @@ export const handleCoinPaymentsWebhook = async (
 
   try {
     const rawBody = req.body;
-    console.log("Raw body received:", rawBody.toString("utf8"));
+
     // Generate HMAC using the raw body
     const hmacHash = crypto
       .createHmac("sha512", ipnSecret)
@@ -60,12 +61,17 @@ export const handleCoinPaymentsWebhook = async (
     }
 
     const payload = new URLSearchParams(rawBody.toString("utf8"));
-    payload.forEach((value, key) => {
-      console.log(`${key}: ${value}`);
-    });
+
     const status = parseInt(payload.get("status") || "0", 10);
     const custom = payload.get("custom") || "";
+    const txn_id = payload.get("txn_id") || "";
     const amount1 = parseFloat(payload.get("amount1") || "0");
+
+    const existingTransaction = await Transaction.findOne({ txn_id });
+    if (existingTransaction) {
+      logger.warn(`Transaction with txn_id ${txn_id} already processed`);
+      return res.status(200).send("Transaction already processed");
+    }
 
     if (!custom) {
       logger.warn("Missing or invalid user ID in 'custom' field");
@@ -73,17 +79,16 @@ export const handleCoinPaymentsWebhook = async (
     }
 
     if (status === 100) {
-      // Payment confirmed, update the user's balance
-      await updateUserBalance(custom, amount1);
+      await updateUserBalance(custom, amount1, txn_id);
       logger.info(
-        `Payment confirmed for user ${custom} with amount ${amount1}`
+        `Payment confirmed for user ${custom} with amount ${amount1} on txn_id - ${txn_id}`
       );
       return res.status(200).send("OK");
     } else if (status < 0) {
-      logger.warn(`Payment error for user ${custom}`);
+      logger.warn(`Payment error for user ${custom} on txn_id - ${txn_id}`);
       return res.status(400).send("Payment error");
     } else {
-      logger.warn(`Payment pending for user ${custom}`);
+      logger.warn(`Payment pending for user ${custom} on txn_id - ${txn_id}`);
       return res.status(400).send("Payment pending");
     }
   } catch (error) {

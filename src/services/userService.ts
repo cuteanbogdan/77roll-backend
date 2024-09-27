@@ -1,3 +1,4 @@
+import Transaction from "../models/Transaction";
 import User from "../models/User";
 
 // Fetch user by ID
@@ -58,7 +59,8 @@ export const updateUserLevelAndRank = async (
 
 export const updateUserBalance = async (
   userId: string,
-  amount: number
+  amount: number,
+  txn_id?: string
 ): Promise<void> => {
   try {
     const user = await User.findById(userId);
@@ -68,8 +70,16 @@ export const updateUserBalance = async (
     }
 
     user.balance += amount;
-
     await user.save();
+
+    const transaction = new Transaction({
+      userId: user._id,
+      type: `Deposit`,
+      amount: amount,
+      date: new Date(),
+      txn_id: txn_id || null,
+    });
+    await transaction.save();
   } catch (error) {
     console.error("Error updating user balance:", error);
     throw new Error("Failed to update user balance");
