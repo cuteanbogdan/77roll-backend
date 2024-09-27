@@ -55,3 +55,23 @@ export const updateUserLevelAndRank = async (
     throw new Error("Error updating user level and rank: " + error);
   }
 };
+
+export const updateUserBalance = async (
+  userId: string,
+  amount: number
+): Promise<void> => {
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    user.balance += amount;
+
+    await user.save();
+  } catch (error) {
+    console.error("Error updating user balance:", error);
+    throw new Error("Failed to update user balance");
+  }
+};
