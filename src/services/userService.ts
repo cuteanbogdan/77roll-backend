@@ -1,3 +1,4 @@
+import logger from "../config/logger";
 import Transaction from "../models/Transaction";
 import User from "../models/User";
 
@@ -60,7 +61,9 @@ export const updateUserLevelAndRank = async (
 export const updateUserBalance = async (
   userId: string,
   amount: number,
-  txn_id?: string
+  txn_id: string | null,
+  type: "deposit" | "withdrawal",
+  withdrawal_id?: string | null
 ): Promise<void> => {
   try {
     const user = await User.findById(userId);
@@ -69,19 +72,27 @@ export const updateUserBalance = async (
       throw new Error("User not found");
     }
 
-    user.balance += amount;
+    if (type === "deposit") {
+      user.balance += amount;
+    } else if (type === "withdrawal") {
+      if (user.balance < amount) {
+        throw new Error("Insufficient balance for withdrawal");
+      }
+      user.balance -= amount;
+    }
     await user.save();
 
     const transaction = new Transaction({
       userId: user._id,
-      type: `Deposit`,
-      amount: amount,
+      type: type === "deposit" ? "Deposit" : "Withdrawal",
+      amount: type === "deposit" ? amount : -amount,
       date: new Date(),
       txn_id: txn_id || null,
+      withdrawal_id: withdrawal_id || null,
     });
     await transaction.save();
   } catch (error) {
-    console.error("Error updating user balance:", error);
+    logger.error("Error updating user balance:", error);
     throw new Error("Failed to update user balance");
   }
 };

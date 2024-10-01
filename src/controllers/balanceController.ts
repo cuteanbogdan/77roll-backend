@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
-import { createCoinPaymentsTransaction } from "../services/coinPaymentsService";
-import { updateUserBalance } from "../services/userService";
+import {
+  createCoinPaymentsTransaction,
+  createCoinPaymentsWithdrawal,
+} from "../services/coinPaymentsService";
+import { findUserById, updateUserBalance } from "../services/userService";
 import logger from "../config/logger";
 import crypto from "crypto";
 import Transaction from "../models/Transaction";
@@ -31,6 +34,44 @@ export const createDeposit = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error("Error creating deposit", { error });
     res.status(500).json({ message: "Failed to create deposit" });
+  }
+};
+
+export const createWithdrawal = async (req: Request, res: Response) => {
+  try {
+    const { userId, amount, currency, address } = req.body;
+
+    if (!userId || !amount || !currency || !address) {
+      logger.warn("Missing or invalid parameters in create withdrawal request");
+      return res.status(400).json({ message: "Missing or invalid parameters" });
+    }
+
+    const user = await findUserById(userId);
+    if (!user || user.balance < amount) {
+      return res.status(400).json({ message: "Insufficient balance" });
+    }
+
+    const result = await createCoinPaymentsWithdrawal(
+      userId,
+      amount,
+      currency,
+      address
+    );
+    await updateUserBalance(
+      userId,
+      amount,
+      null,
+      "withdrawal",
+      result.result.id
+    );
+
+    logger.info(
+      `Withdrawal created for user ${userId} with amount ${amount} ${currency}`
+    );
+    res.json({ message: "Withdrawal initiated successfully", result });
+  } catch (error) {
+    logger.error("Error creating withdrawal", { error });
+    res.status(500).json({ message: "Failed to create withdrawal" });
   }
 };
 
@@ -66,6 +107,8 @@ export const handleCoinPaymentsWebhook = async (
     const custom = payload.get("custom") || "";
     const txn_id = payload.get("txn_id") || "";
     const amount1 = parseFloat(payload.get("amount1") || "0");
+    const ipn_type = payload.get("ipn_type") || "";
+    const withdrawal_id = payload.get("id") || "";
 
     const existingTransaction = await Transaction.findOne({ txn_id });
     if (existingTransaction) {
@@ -78,13 +121,38 @@ export const handleCoinPaymentsWebhook = async (
       return res.status(400).send("Invalid user ID");
     }
 
-    if (status === 100) {
-      await updateUserBalance(custom, amount1, txn_id);
-      logger.info(
-        `Payment confirmed for user ${custom} with amount ${amount1} on txn_id - ${txn_id}`
-      );
-      return res.status(200).send("OK");
-    } else if (status < 0) {
+    if (ipn_type === "deposit") {
+      if (status === 100) {
+        await updateUserBalance(custom, amount1, txn_id, "deposit");
+        logger.info(
+          `Deposit confirmed for user ${custom} with amount ${amount1} on txn_id - ${txn_id}`
+        );
+        return res.status(200).send("OK");
+      }
+    } else if (ipn_type === "withdrawal") {
+      if (status === 2) {
+        const result = await Transaction.updateOne(
+          { userId: custom, withdrawal_id: withdrawal_id, type: "withdrawal" },
+          { txn_id: txn_id }
+        );
+
+        if (result.modifiedCount === 0) {
+          logger.warn(
+            `No transaction found for withdrawal_id ${withdrawal_id}`
+          );
+          return res
+            .status(400)
+            .send(`Transaction not found for withdrawal_id ${withdrawal_id}`);
+        }
+
+        logger.info(
+          `Withdrawal confirmed for user ${custom} with amount ${amount1} on txn_id - ${txn_id}`
+        );
+        return res.status(200).send("OK");
+      }
+    }
+
+    if (status < 0) {
       logger.warn(`Payment error for user ${custom} on txn_id - ${txn_id}`);
       return res.status(400).send("Payment error");
     } else {
