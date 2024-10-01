@@ -6,6 +6,7 @@ interface ITransaction extends Document {
   date: Date;
   userId: mongoose.Types.ObjectId;
   txn_id?: string;
+  withdrawal_id?: string;
 }
 
 const TransactionSchema: Schema<ITransaction> = new Schema<ITransaction>({
@@ -14,6 +15,7 @@ const TransactionSchema: Schema<ITransaction> = new Schema<ITransaction>({
   date: { type: Date, default: Date.now },
   userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
   txn_id: { type: String, required: false },
+  withdrawal_id: { type: String, required: false },
 });
 
 const Transaction = mongoose.model<ITransaction>(
