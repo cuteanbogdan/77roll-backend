@@ -66,7 +66,7 @@ export const createWithdrawal = async (req: Request, res: Response) => {
     );
 
     logger.info(
-      `Withdrawal created for user ${userId} with amount ${amount} ${currency}`
+      `Withdrawal created for user ${userId} with amount ${amount}$ in ${currency}`
     );
     res.json({ message: "Withdrawal initiated successfully", result });
   } catch (error) {
@@ -106,7 +106,8 @@ export const handleCoinPaymentsWebhook = async (
     const status = parseInt(payload.get("status") || "0", 10);
     const custom = payload.get("custom") || "";
     const txn_id = payload.get("txn_id") || "";
-    const amount1 = parseFloat(payload.get("amount1") || "0");
+    const amount1 = parseFloat(payload.get("amount1") || "0"); // for deposit
+    const amount = parseFloat(payload.get("amount") || "0"); // for withdraw
     const ipn_type = payload.get("ipn_type") || "";
     const withdrawal_id = payload.get("id") || "";
 
@@ -116,7 +117,7 @@ export const handleCoinPaymentsWebhook = async (
       return res.status(200).send("Transaction already processed");
     }
 
-    if (!custom) {
+    if (!custom && ipn_type === "deposit") {
       logger.warn("Missing or invalid user ID in 'custom' field");
       return res.status(400).send("Invalid user ID");
     }
@@ -132,7 +133,7 @@ export const handleCoinPaymentsWebhook = async (
     } else if (ipn_type === "withdrawal") {
       if (status === 2) {
         const result = await Transaction.updateOne(
-          { userId: custom, withdrawal_id: withdrawal_id, type: "withdrawal" },
+          { withdrawal_id: withdrawal_id, type: "Withdrawal" },
           { txn_id: txn_id }
         );
 
@@ -146,7 +147,7 @@ export const handleCoinPaymentsWebhook = async (
         }
 
         logger.info(
-          `Withdrawal confirmed for user ${custom} with amount ${amount1} on txn_id - ${txn_id}`
+          `Withdrawal confirmed withdrawal ID - ${withdrawal_id} with amount ${amount} on txn_id - ${txn_id}`
         );
         return res.status(200).send("OK");
       }
