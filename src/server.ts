@@ -4,7 +4,7 @@ import logger from "./config/logger";
 import { Server } from "socket.io";
 import { setupSockets } from "./sockets/setupSockets";
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 
 const io = new Server(server, {
   cors: {
