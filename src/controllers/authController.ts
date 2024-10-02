@@ -36,6 +36,7 @@ const register = async (req: Request, res: Response) => {
     res.cookie("roulette-token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });
 
@@ -69,6 +70,7 @@ const login = async (req: Request, res: Response) => {
     res.cookie("roulette-token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });
 
